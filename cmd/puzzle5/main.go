@@ -5,23 +5,22 @@ import "fmt"
 import "unicode"
 
 func main() {
-	compute(data1, false, ' ')
+	resultPartOne := compute(data1, false, ' ')
+	fmt.Printf("result part one= %+v\n", resultPartOne)
 	// part two
 	min := len(data1)
 	result := ' '
 	for r := rune('a'); r <= rune('z'); r++ {
-		fmt.Printf("r = %+v\n", string(r))
 		count := compute(data1, true, r)
 		if count < min {
 			min = count
 			result = r
 		}
 	}
-	fmt.Printf("exclude = %+v\n", string(result))
+	fmt.Printf("result part two: %d elements for unit %s\n", min, string(result))
 }
 
 func compute(data string, filtered bool, exclude rune) int {
-	fmt.Println("vim-go")
 	last := rune(' ')
 	result := " "
 	for _, c := range data {
@@ -41,7 +40,6 @@ func compute(data string, filtered bool, exclude rune) int {
 		result = result + string(c)
 		last = c
 	}
-	fmt.Printf("length = %+v\n", len(result)-1)
 	return len(result) - 1
 }
 
