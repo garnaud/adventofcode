@@ -8,6 +8,7 @@ import (
 
 func main() {
 	compute(data)
+	fmt.Printf("result = %+v\n", computePartTwo(data))
 }
 
 type sortRunes []rune
@@ -28,6 +29,31 @@ func SortString(s string) string {
 	r := []rune(s)
 	sort.Sort(sortRunes(r))
 	return string(r)
+}
+
+func computePartTwo(data string) string {
+
+	a := strings.Split(data, "\n")
+	for i, curWord := range a {
+		if i == len(a)-1 {
+			break
+		}
+		for _, cmpWord := range a[i+1:] {
+			diff := 0
+			for k, curLetter := range curWord {
+				if curLetter != rune(cmpWord[k]) {
+					diff++
+				}
+				if diff > 1 {
+					break
+				}
+			}
+			if diff == 1 {
+				return "\n" + curWord + "\n" + cmpWord
+			}
+		}
+	}
+	return "not found"
 }
 
 func compute(data string) int {
