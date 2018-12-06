@@ -1,17 +1,120 @@
 package main
 
-import "bufio"
-import "fmt"
-import "strings"
+import (
+	"bufio"
+	"fmt"
+	"regexp"
+	"sort"
+	"strconv"
+	"strings"
+)
 
 func main() {
-	fmt.Printf("result is %d\n", compute(data))
+	partOne, partTwo := compute(data)
+	fmt.Printf("partOne= %+v\n", partOne)
+	fmt.Printf("partTwo = %+v\n", partTwo)
 }
 
-func compute(data string) int {
-	reader := strings.NewReader(data)
-	scanner := bufio.NewReader(reader).NewReadLine()
-	return 0
+type Line struct {
+	date   string
+	minute string
+	text   string
+	action string
+}
+
+type Lines []Line
+
+func (l Lines) Len() int           { return len(l) }
+func (l Lines) Swap(i, j int)      { l[i], l[j] = l[j], l[i] }
+func (l Lines) Less(i, j int) bool { return l[i].date+l[i].minute < l[j].date+l[j].minute }
+
+func compute(data string) (int, int) {
+	pattern := regexp.MustCompile(`\[(.+).*:(\d\d)\] (.*)`)
+	patternId := regexp.MustCompile(`.* #(\d+) .*`)
+	scanner := bufio.NewScanner(strings.NewReader(data))
+	lines := make([]Line, 0)
+	guards := make(map[string][]int, 0)
+	for scanner.Scan() {
+		line := scanner.Text()
+		submatch := pattern.FindStringSubmatch(line)
+		action := ""
+		if submatch[3][0] == 'G' {
+			action = "shift"
+		} else if submatch[3][0] == 'w' {
+			action = "wake"
+		} else if submatch[3][0] == 'f' {
+			action = "sleep"
+		}
+		lines = append(lines, Line{
+			date:   submatch[1],
+			minute: submatch[2],
+			text:   submatch[3],
+			action: action,
+		})
+	}
+	sort.Sort(Lines(lines))
+	var curGuard string
+	for i, line := range lines[:len(lines)-1] {
+		fmt.Printf("line = %+v\n", line)
+
+		if line.action == "shift" {
+			id := patternId.FindStringSubmatch(line.text)
+			if _, ok := guards[id[1]]; !ok {
+				guards[id[1]] = make([]int, 60)
+			}
+			curGuard = id[1]
+		} else if line.action == "wake" {
+		} else if line.action == "sleep" {
+			until := 60
+			if lines[i+1].action == "wake" {
+				until, _ = strconv.Atoi(lines[i+1].minute)
+			}
+			from, _ := strconv.Atoi(lines[i].minute)
+			fmt.Printf("until = %+v\n", until)
+			for j := from; j < until; j++ {
+				guards[curGuard][j] = guards[curGuard][j] + 1
+			}
+		}
+	}
+
+	maxAsleep := -1
+	bestMinOfLaziestGuard := -1
+	lazyGuard := "no one"
+	bestMinOverall := -1
+	guardOfBestMinOverall := "no one"
+	maxFrequency := -1
+	for k, v := range guards {
+		fmt.Printf("k,v = %+s,%v\n", k, v)
+		sum := 0
+		max := -1
+		bestMin := -1
+		for minute, asleep := range v {
+			sum += asleep
+			if asleep > max {
+				max = asleep
+				bestMin = minute
+			}
+		}
+		if max > maxFrequency {
+			bestMinOverall = bestMin
+			guardOfBestMinOverall = k
+			maxFrequency = max
+		}
+		if sum > maxAsleep {
+			maxAsleep = sum
+			lazyGuard = k
+			bestMinOfLaziestGuard = bestMin
+		}
+	}
+	fmt.Printf("lazyGuard = %+v\n", lazyGuard)
+	fmt.Printf("bestMinOfLaziestGuard= %+v\n", bestMinOfLaziestGuard)
+	fmt.Printf("maxAsleep= %+v\n", maxAsleep)
+
+	fmt.Printf("bestMinOverall = %+v\n", bestMinOverall)
+	fmt.Printf("guardOfBestMinOverall = %+v\n", guardOfBestMinOverall)
+	lazyGuardInt, _ := strconv.Atoi(lazyGuard)
+	guardOfBestMinInt, _ := strconv.Atoi(guardOfBestMinOverall)
+	return lazyGuardInt * bestMinOfLaziestGuard, guardOfBestMinInt * bestMinOverall
 }
 
 var data = `[1518-06-12 00:00] Guard #3359 begins shift
